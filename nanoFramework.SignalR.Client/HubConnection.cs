@@ -500,6 +500,8 @@ namespace nanoFramework.SignalR.Client
 
         private void SendMessageFromJsonString(string json)
         {
+            if (json == null) return;
+
             if (_websocketClient.State == WebSocketState.Open)
             {
                 byte[] messageBytes = new byte[json.Length + 1];
