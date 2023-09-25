@@ -303,7 +303,7 @@ namespace nanoFramework.SignalR.Client
             {
                 _websocketClient.Connect(Uri, CustomHeaders);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 websocketException = ex.Message;
             }
@@ -371,38 +371,15 @@ namespace nanoFramework.SignalR.Client
 
         private void SendInvocationMessage(string methodName, object[] args, string invocationId = "")
         {
-            string jsonString;
-            if (invocationId == null || invocationId == string.Empty)
-            {
-                InvocationSendMessage nonBlockingMessage = new InvocationSendMessage()
-                {
-                    target = methodName,
-                    type = MessageType.Invocation,
-                    arguments = new ArrayList()
-                };
-                foreach (object arg in args)
-                {
-                    nonBlockingMessage.arguments.Add(arg);
-                }
+            var message = invocationId == null || invocationId == string.Empty ?
+                new InvocationSendMessage() :
+                new InvocationBlockingSendMessage();
+            message.Target = methodName;
+            message.Type = MessageType.Invocation;
+            message.Arguments = args;
+            message.InvocationId = invocationId;
 
-                jsonString = JsonConvert.SerializeObject(nonBlockingMessage);
-            }
-            else
-            {
-                var invocationBlockingMessage = new InvocationBlockingSendMessage()
-                {
-                    target = methodName,
-                    type = MessageType.Invocation,
-                    arguments = new ArrayList(),
-                    invocationId = invocationId
-                };
-                foreach (object arg in args)
-                {
-                    invocationBlockingMessage.arguments.Add(arg);
-                }
-
-                jsonString = JsonConvert.SerializeObject(invocationBlockingMessage);
-            }
+            var jsonString = message.ToString();
 
             // send file. 
             SendMessageFromJsonString(jsonString);
@@ -410,6 +387,11 @@ namespace nanoFramework.SignalR.Client
 
         private void WebsocketClient_MessageReceived(object sender, MessageReceivedEventArgs e)
         {
+            string[] messages = Encoding.UTF8.GetString(e.Frame.Buffer, 0, e.Frame.Buffer.Length - 1).Split((char)0x1E);
+
+            foreach (var message in messages)
+                Console.WriteLine($"Received message: {message}");
+
             if (e.Frame.MessageLength > 0)
             {
                 // not a signalr Message!
@@ -453,13 +435,13 @@ namespace nanoFramework.SignalR.Client
                                     var types = handlerStuff[1] as Type[];
                                     if (types.Length == invocationMessage.arguments.Count)
                                     {
-                                        object[] onInvokeArgs = new object[types.Length];
-                                        for (int i = 0; i < types.Length; i++)
-                                        {
-                                            onInvokeArgs[i] = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(invocationMessage.arguments[i]), types[i]);
-                                        }
+                                        //object[] onInvokeArgs = new object[types.Length];
+                                        //for (int i = 0; i < types.Length; i++)
+                                        //{
+                                        //    onInvokeArgs[i] = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(invocationMessage.arguments[i]), types[i]);
+                                        //}
 
-                                        handler?.Invoke(this, onInvokeArgs);
+                                        handler?.Invoke(this, invocationMessage.arguments.ToArray());
                                         break;
                                     }
 

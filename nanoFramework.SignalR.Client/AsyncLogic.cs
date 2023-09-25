@@ -16,7 +16,9 @@ namespace nanoFramework.SignalR.Client
         // call when HubConnection is closed
         internal void CloseAllAsyncResults()
         {
-            var keys = _asyncBacklog.Keys;
+            string[] keys = new string[_asyncBacklog.Keys.Count];
+            _asyncBacklog.Keys.CopyTo(keys, 0);
+
             foreach (var key in keys)
             {
                 SetAsyncResultError("HubConnection was closed", (string)key);
