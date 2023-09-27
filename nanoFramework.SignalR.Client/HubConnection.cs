@@ -424,24 +424,60 @@ namespace nanoFramework.SignalR.Client
 
                     foreach (string jsonMessage in stringMessages)
                     {
-                        var invocationMessage = (InvocationReceiveMessage)JsonConvert.DeserializeObject(jsonMessage, typeof(InvocationReceiveMessage));
-                        switch (invocationMessage.type)
+                        var jsonObject = (JsonObject)JsonConvert.Deserialize(jsonMessage);
+
+                        MessageType invocationMessageType = MessageType.Ping;
+                        string target = string.Empty;
+                        string invocationId = string.Empty;
+                        string error = string.Empty;
+                        object result = null;
+                        bool allowReconnect = false;
+                        string[] arguments = default;
+
+                        foreach (var member in jsonObject.Members)
+                        {
+                            if (member is JsonProperty property)
+                            {
+                                if (property.Name == "type") invocationMessageType = (MessageType)((JsonValue)property.Value).Value;
+                                else if (property.Name == "target") target = ((JsonValue)property.Value).Value.ToString();
+                                else if (property.Name == "invocationId") invocationId = ((JsonValue)property.Value).Value.ToString();
+                                else if (property.Name == "error") error = ((JsonValue)property.Value).Value.ToString();
+                                else if (property.Name == "result") result = ((JsonValue)property.Value).Value;
+                                else if (property.Name == "allowReconnect") allowReconnect = (bool)((JsonValue)property.Value).Value;
+                                else if (property.Name == "arguments")
+                                {
+                                    var items = ((JsonArray)property.Value).Items;
+                                    arguments = new string[items.Length];
+                                    for (int i = 0; i < items.Length; i++)
+                                    {
+                                        if (items[i] is JsonValue value) arguments[i] = value.Value.ToString();
+                                        else if (items[i] is JsonObject obj)
+                                        {
+                                            arguments[i] = obj.RawValue;
+                                            Console.WriteLine(obj.RawValue);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        switch (invocationMessageType)
                         {
                             case MessageType.Invocation:
-                                object[] handlerStuff = _onInvokeHandlers[invocationMessage.target] as object[];
+                                object[] handlerStuff = _onInvokeHandlers[target] as object[];
                                 if (handlerStuff != null)
                                 {
                                     var handler = handlerStuff[0] as OnInvokeHandler;
                                     var types = handlerStuff[1] as Type[];
-                                    if (types.Length == invocationMessage.arguments.Count)
+                                    if (types.Length == arguments.Length)
                                     {
-                                        //object[] onInvokeArgs = new object[types.Length];
-                                        //for (int i = 0; i < types.Length; i++)
-                                        //{
-                                        //    onInvokeArgs[i] = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(invocationMessage.arguments[i]), types[i]);
-                                        //}
+                                        object[] onInvokeArgs = new object[types.Length];
+                                        for (int i = 0; i < types.Length; i++)
+                                        {
+                                            onInvokeArgs[i] = JsonConvert.DeserializeObject(arguments[i], types[i]);
+                                        }
 
-                                        handler?.Invoke(this, invocationMessage.arguments.ToArray());
+                                        handler?.Invoke(this, onInvokeArgs);
                                         break;
                                     }
 
@@ -452,13 +488,13 @@ namespace nanoFramework.SignalR.Client
                                 Console.WriteLine("No matchin method found");
                                 break;
                             case MessageType.Completion:
-                                if (invocationMessage.error != null && invocationMessage.error != string.Empty)
+                                if (error != null && error != string.Empty)
                                 {
-                                    _asyncLogic.SetAsyncResultError(invocationMessage.error, invocationMessage.invocationId);
+                                    _asyncLogic.SetAsyncResultError(error, invocationId);
                                 }
                                 else
                                 {
-                                    _asyncLogic.SetAsyncResultValue(invocationMessage.result, invocationMessage.invocationId);
+                                    _asyncLogic.SetAsyncResultValue(result, invocationId);
                                 }
 
                                 break;
@@ -466,8 +502,8 @@ namespace nanoFramework.SignalR.Client
                                 // _ServerTimeoutTimer is already reset after every incoming message. No need to reset the timer here. 
                                 break;
                             case MessageType.Close:
-                                string errorMessage = string.IsNullOrEmpty(invocationMessage.error) ? null : invocationMessage.error;
-                                if (invocationMessage.allowReconnect && ReconnectEnabled)
+                                string errorMessage = string.IsNullOrEmpty(error) ? null : error;
+                                if (allowReconnect && ReconnectEnabled)
                                 {
                                     // Because underlying Websocket gets closed this will also try to trigger a Hardclose on the Hubconnection also.
                                     // Therefor a reconnect and hardclose can happen simultaneously

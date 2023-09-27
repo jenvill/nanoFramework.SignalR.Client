@@ -80,7 +80,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\CarControl.nanoFramework.Json\nanoFramework.Json\nanoFramework.Json.nfproj" />
-    <ProjectReference Include="..\..\CarControl.nanoFramework.WebServer\nanoFramework.WebServer\nanoFramework.WebServer.nfproj" />
     <ProjectReference Include="..\..\System.Net.WebSockets\WebSockets.Client\System.Net.WebSockets.Client.nfproj" />
   </ItemGroup>
   <ItemGroup>
