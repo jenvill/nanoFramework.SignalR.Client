@@ -33,7 +33,6 @@
   <ItemGroup>
     <Compile Include="AsyncLogic.cs" />
     <Compile Include="AsyncResult.cs" />
-    <Compile Include="Extensions.cs" />
     <Compile Include="HubConnection.cs" />
     <Compile Include="HubConnectionState.cs" />
     <Compile Include="JsonHubHandshakeError.cs" />
@@ -80,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\CarControl.nanoFramework.Json\nanoFramework.Json\nanoFramework.Json.nfproj" />
+    <ProjectReference Include="..\..\nanoFramework.Logging\nanoFramework.Logging\nanoFramework.Logging.nfproj" />
     <ProjectReference Include="..\..\System.Net.WebSockets\WebSockets.Client\System.Net.WebSockets.Client.nfproj" />
   </ItemGroup>
   <ItemGroup>

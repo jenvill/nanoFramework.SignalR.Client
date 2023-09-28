@@ -9,6 +9,8 @@ using System.Net.WebSockets;
 using System.Net.WebSockets.WebSocketFrame;
 using nanoFramework.Json;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+using nanoFramework.Logging;
 
 namespace nanoFramework.SignalR.Client
 {
@@ -39,6 +41,7 @@ namespace nanoFramework.SignalR.Client
         private Timer _sendHeartBeatTimer;
         private Timer _serverTimeoutTimer;
         private readonly HubConnectionOptions _hubConnectionOptions;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Indicates the state of the <see cref="HubConnection"/> to the server.
@@ -137,23 +140,12 @@ namespace nanoFramework.SignalR.Client
         {
             _hubConnectionOptions = options;
             State = HubConnectionState.Disconnected;
-            if (headers != null)
-            {
-                CustomHeaders = headers;
-            }
+            _logger = LogDispatcher.LoggerFactory.CreateLogger(nameof(HubConnection));
+            if (headers != null) CustomHeaders = headers;
 
-            if (uri.ToLower().StartsWith("http://"))
-            {
-                Uri = "ws" + uri.Substring(4, uri.Length - 4);
-            }
-            else if (uri.ToLower().StartsWith("https://"))
-            {
-                Uri = "wss" + uri.Substring(5, uri.Length - 5);
-            }
-            else
-            {
-                Uri = uri;
-            }
+            if (uri.ToLower().StartsWith("http://")) Uri = "ws" + uri.Substring(4, uri.Length - 4);
+            else if (uri.ToLower().StartsWith("https://")) Uri = "wss" + uri.Substring(5, uri.Length - 5);
+            else Uri = uri;
         }
 
         /// <summary>
@@ -187,14 +179,8 @@ namespace nanoFramework.SignalR.Client
         /// </summary>
         public void Start()
         {
-            if (State == HubConnectionState.Disconnected)
-            {
-                InternalStart();
-            }
-            else
-            {
-                throw new Exception("Hubconnection.Connect can only be called when Hubconnection is disconnected");
-            }
+            if (State == HubConnectionState.Disconnected) InternalStart();
+            else _logger.LogError("Hubconnection.Connect can only be called when Hubconnection is disconnected");
         }
 
         /// <summary>
@@ -207,9 +193,7 @@ namespace nanoFramework.SignalR.Client
         /// This is a fire and forget implementation
         /// </remarks>
         public void SendCore(string methodName, object[] args)
-        {
-            SendInvocationMessage(methodName, args);
-        }
+            => SendInvocationMessage(methodName, args);
 
         /// <summary>
         /// Invokes a hub method on the server using the specified method name, return type and arguments.
@@ -225,9 +209,7 @@ namespace nanoFramework.SignalR.Client
         /// This is synchronous call that will block your thread, use <see cref="InvokeCoreAsync"/> for a nonblocking asynchronous call. 
         /// </remarks>
         public object InvokeCore(string methodName, Type returnType, object[] args, int timeout = 0)
-        {
-            return InvokeCoreAsync(methodName, returnType, args, timeout).Value;
-        }
+            => InvokeCoreAsync(methodName, returnType, args, timeout).Value;
 
         /// <summary>
         /// Invokes a hub method on the server using the specified method name, return type and arguments.
@@ -264,24 +246,14 @@ namespace nanoFramework.SignalR.Client
         /// </remarks>
         public void On(string methodName, Type[] parameterTypes, OnInvokeHandler handler)
         {
-            if (_onInvokeHandlers[methodName] != null)
-            {
-                throw new Exception($"Only one handler per method allowed. {methodName} - already exists");
-            }
+            if (_onInvokeHandlers[methodName] != null) _logger.LogError($"Only one handler per method allowed. {methodName} - already exists");
 
             _onInvokeHandlers.Add(methodName, new Object[] { handler, parameterTypes });
         }
 
         private void InternalStart(bool reconnecting = false)
         {
-            if (reconnecting)
-            {
-                State = HubConnectionState.Reconnecting;
-            }
-            else
-            {
-                State = HubConnectionState.Connecting;
-            }
+            State = reconnecting ? HubConnectionState.Reconnecting : HubConnectionState.Connecting;
 
             // compose client websocket options with what we have
             var clientWebSocketOptions = new ClientWebSocketOptions()
@@ -307,6 +279,7 @@ namespace nanoFramework.SignalR.Client
             {
                 websocketException = ex.Message;
             }
+
             if (_websocketClient.State == WebSocketState.Open && string.IsNullOrEmpty(websocketException))
             {
                 SendMessageFromJsonString(handshakeJson);
@@ -331,14 +304,8 @@ namespace nanoFramework.SignalR.Client
             else
             {
                 State = HubConnectionState.Disconnected;
-                if (string.IsNullOrEmpty(websocketException))
-                {
-                    throw new Exception("Unable to connect");
-                }
-                else
-                {
-                    throw new Exception($"Unable to connect, Websocket error");
-                }
+                if (string.IsNullOrEmpty(websocketException)) _logger.LogError("Unable to connect");
+                else _logger.LogError($"Unable to connect, Websocket error: {websocketException}");
             }
         }
 
@@ -366,7 +333,7 @@ namespace nanoFramework.SignalR.Client
         {
             _awaitHandsHake.Set();
             State = HubConnectionState.Disconnected;
-            throw new Exception("Hubconnection connect timeout");
+            _logger.LogError("Hubconnection connect timeout");
         }
 
         private void SendInvocationMessage(string methodName, object[] args, string invocationId = "")
@@ -389,16 +356,12 @@ namespace nanoFramework.SignalR.Client
         {
             string[] messages = Encoding.UTF8.GetString(e.Frame.Buffer, 0, e.Frame.Buffer.Length - 1).Split((char)0x1E);
 
-            foreach (var message in messages)
-                Console.WriteLine($"Received message: {message}");
+            foreach (var message in messages) _logger.LogTrace($"{Uri} - Received message: {message}");
 
             if (e.Frame.MessageLength > 0)
             {
                 // not a signalr Message!
-                if (e.Frame.Buffer[e.Frame.Buffer.Length - 1] != 0x1E)
-                {
-                    throw new Exception("Received a non Signalr Message");
-                }
+                if (e.Frame.Buffer[e.Frame.Buffer.Length - 1] != 0x1E) _logger.LogError("Received a non Signalr Message");
 
                 // expect handshake
                 if (State == HubConnectionState.Connecting || State == HubConnectionState.Reconnecting)
@@ -481,11 +444,11 @@ namespace nanoFramework.SignalR.Client
                                         break;
                                     }
 
-                                    Console.WriteLine("not a valid invocation, types don't match");
+                                    _logger.LogError("not a valid invocation, types don't match");
                                     break;
                                 }
 
-                                Console.WriteLine("No matchin method found");
+                                _logger.LogError("No matchin method found");
                                 break;
                             case MessageType.Completion:
                                 if (error != null && error != string.Empty)
@@ -520,16 +483,15 @@ namespace nanoFramework.SignalR.Client
                             case MessageType.StreamItem:
                             case MessageType.StreamInvocation:
                             case MessageType.CancelInvocation:
-                                throw new Exception("Streaming is not implemented");
+                                _logger.LogError("Streaming is not implemented");
+                                break;
                             default:
-                                throw new Exception("unknown Signalr Message Type was received");
+                                _logger.LogError("unknown Signalr Message Type was received");
+                                break;
                         }
                     }
 
-                    if (_serverTimeoutTimer != null)
-                    {
-                        _serverTimeoutTimer.Change((int)ServerTimeout.TotalMilliseconds, -1);
-                    }
+                    if (_serverTimeoutTimer != null) _serverTimeoutTimer.Change((int)ServerTimeout.TotalMilliseconds, -1);
                 }
             }
         }
@@ -537,6 +499,8 @@ namespace nanoFramework.SignalR.Client
         private void SendMessageFromJsonString(string json)
         {
             if (json == null) return;
+
+            _logger.LogTrace($"{Uri} - Message send: {json}");
 
             if (_websocketClient.State == WebSocketState.Open)
             {
@@ -552,7 +516,7 @@ namespace nanoFramework.SignalR.Client
                 return;
             }
 
-            throw new Exception("Can't send message WebsocketClient is not open");
+            _logger.LogError("Can't send message WebsocketClient is not open");
         }
 
         private void HardClose(bool reconnect = false)
