@@ -20,13 +20,26 @@ namespace nanoFramework.SignalR.Client
             => value switch
             {
                 null => "null",
-                DateTime or Guid or char or string => $"\"{value}\"",
+                DateTime d => $"\"{d.ToString("O")}\"",
+                Guid or char => $"\"{value}\"",
                 bool b => b.ToString().ToLower(),
                 byte[] ba => $"\"{Convert.ToBase64String(ba)}\"",
                 var v when v.GetType().IsClass => JsonConvert.SerializeObject(v),
+                string s => $"\"{EscapeString(s)}\"",
                 _ => value.ToString(),
 
             };
+        private string EscapeString(string value)
+        {
+            var charArray = value.ToCharArray();
+            for (int i = 0; i < charArray.Length; i++)
+            {
+                char c = charArray[i];
+                if (c == '"') charArray[i] = '\"';
+            }
+            return new string(charArray);
+        }
+
         public override string ToString()
         {
             string args = string.Empty;

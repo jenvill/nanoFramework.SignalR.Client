@@ -136,11 +136,16 @@ namespace nanoFramework.SignalR.Client
         /// <param name="uri">Fully Qualified Domain Name of the SignalR Hub server.</param>
         /// <param name="headers">Optional <see cref="ClientWebSocketHeaders"/> for setting custom headers.</param>
         /// <param name="options">Optional <see cref="HubConnectionOptions"/> where extra options can be defined.</param>
-        public HubConnection(string uri, ClientWebSocketHeaders headers = null, HubConnectionOptions options = null) //reconnect enables the client to reconnect if the Signalr server closes with a reconenct request. 
+        /// <param name="logger">Optional <see cref="ILogger"/> where extra options can be defined.</param>
+        public HubConnection(
+            string uri, 
+            ClientWebSocketHeaders headers = null, 
+            HubConnectionOptions options = null, 
+            ILogger logger = null) //reconnect enables the client to reconnect if the Signalr server closes with a reconenct request. 
         {
             _hubConnectionOptions = options;
             State = HubConnectionState.Disconnected;
-            _logger = LogDispatcher.LoggerFactory.CreateLogger(nameof(HubConnection));
+            _logger = logger ?? LogDispatcher.LoggerFactory.CreateLogger(nameof(HubConnection));
             if (headers != null) CustomHeaders = headers;
 
             if (uri.ToLower().StartsWith("http://")) Uri = "ws" + uri.Substring(4, uri.Length - 4);
@@ -264,7 +269,7 @@ namespace nanoFramework.SignalR.Client
             };
 
             // now create the websocket client with the options
-            _websocketClient = new ClientWebSocket(clientWebSocketOptions);
+            _websocketClient = new ClientWebSocket(clientWebSocketOptions, _logger);
 
             _websocketClient.MessageReceived += WebsocketClient_MessageReceived;
             _websocketClient.ConnectionClosed += WebSocketClient_Closed;
