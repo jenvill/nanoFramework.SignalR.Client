@@ -185,7 +185,7 @@ namespace nanoFramework.SignalR.Client
         public void Start()
         {
             if (State == HubConnectionState.Disconnected) InternalStart();
-            else _logger.LogError("Hubconnection.Connect can only be called when Hubconnection is disconnected");
+            else _logger.LogError($"{Uri} Connect can only be called when Hubconnection is disconnected.");
         }
 
         /// <summary>
