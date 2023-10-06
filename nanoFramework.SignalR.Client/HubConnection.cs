@@ -25,14 +25,17 @@ namespace nanoFramework.SignalR.Client
     /// </remarks>
     public class HubConnection
     {
+        private const string HANDSHAKE_MESSAGE_JSON = @"{""protocol"":""json"",""version"":1}";
+        private const string PING_MESSAGE_JSON = "{\"type\": 6}";
+        private const string CLOSE_MESSAGE_JSON = "{\"type\":7}";
+        private const string CLOSE_MESSAGE_WITH_ERROR_JSON = "{{\"type\":7,\"error\":\"{errorMessage}\"}}";
+
         private static readonly TimeSpan DefaultServerTimeout = TimeSpan.FromSeconds(30); // Server ping rate is 15 sec, this is 2 times that.
         private static readonly TimeSpan DefaultHandshakeTimeout = TimeSpan.FromSeconds(15);
         private static readonly TimeSpan DefaultKeepAliveInterval = TimeSpan.FromSeconds(15);
 
         // Todo timeout when someting already gone wrong should not happen!
         // Todo what about reconnecting is this implemented and how? Not yet reconnect in constructor working. // Yes but only reconnects if server requested this. 
-
-        private static string handshakeJson = @"{""protocol"":""json"",""version"":1}";
 
         private ClientWebSocket _websocketClient;
         private readonly AutoResetEvent _awaitHandsHake = new AutoResetEvent(false);
@@ -123,7 +126,7 @@ namespace nanoFramework.SignalR.Client
         /// This can be enabled by setting <see cref="HubConnectionOptions.Reconnect"/> to true.
         /// This reconnect function is experimental and perhaps better handled elsewhere. 
         /// </remarks>
-        public bool ReconnectEnabled => _hubConnectionOptions == null ? false : _hubConnectionOptions.Reconnect;
+        public bool ReconnectEnabled => _hubConnectionOptions != null && _hubConnectionOptions.Reconnect;
 
         /// <summary>
         /// Custome headers.
@@ -138,9 +141,9 @@ namespace nanoFramework.SignalR.Client
         /// <param name="options">Optional <see cref="HubConnectionOptions"/> where extra options can be defined.</param>
         /// <param name="logger">Optional <see cref="ILogger"/> where extra options can be defined.</param>
         public HubConnection(
-            string uri, 
-            ClientWebSocketHeaders headers = null, 
-            HubConnectionOptions options = null, 
+            string uri,
+            ClientWebSocketHeaders headers = null,
+            HubConnectionOptions options = null,
             ILogger logger = null) //reconnect enables the client to reconnect if the Signalr server closes with a reconenct request. 
         {
             _hubConnectionOptions = options;
@@ -163,19 +166,13 @@ namespace nanoFramework.SignalR.Client
             {
                 if (State == HubConnectionState.Connected)
                 {
-                    if (errorMessage == null)
-                    {
-                        SendMessageFromJsonString("{\"type\":7}");
-                    }
-                    else
-                    {
-                        SendMessageFromJsonString($"{{\"type\":7,\"error\":\"{errorMessage}\"}}");
-                    }
+                    if (errorMessage == null) SendMessageFromJsonString(CLOSE_MESSAGE_JSON);
+                    else SendMessageFromJsonString(string.Format(CLOSE_MESSAGE_WITH_ERROR_JSON, errorMessage));
                 }
 
                 State = HubConnectionState.Disconnected;
                 HardClose();
-                Closed?.Invoke(this, new SignalrEventMessageArgs() { Message = "Closed by client" });
+                Closed?.Invoke(this, new SignalrEventMessageArgs { Message = "Closed by client" });
             }
         }
 
@@ -231,11 +228,15 @@ namespace nanoFramework.SignalR.Client
         /// </remarks>
         public AsyncResult InvokeCoreAsync(string methodName, Type returnType, object[] args, int timeout = 0)
         {
-            TimeSpan serverTimeout = new TimeSpan(0, 0, 0, 0, timeout);
+            TimeSpan serverTimeout = new(0, 0, 0, 0, timeout);
+
             if (timeout == 0) serverTimeout = ServerTimeout;
             else if (timeout == -1) serverTimeout = Timeout.InfiniteTimeSpan;
+
             var asyncResult = _asyncLogic.BeginAsyncResult(returnType, serverTimeout);
+
             SendInvocationMessage(methodName, args, asyncResult.InvocationId);
+
             return asyncResult;
         }
 
@@ -253,7 +254,7 @@ namespace nanoFramework.SignalR.Client
         {
             if (_onInvokeHandlers[methodName] != null) _logger.LogError($"Only one handler per method allowed. {methodName} - already exists");
 
-            _onInvokeHandlers.Add(methodName, new Object[] { handler, parameterTypes });
+            _onInvokeHandlers.Add(methodName, new object[] { handler, parameterTypes });
         }
 
         private void InternalStart(bool reconnecting = false)
@@ -287,9 +288,9 @@ namespace nanoFramework.SignalR.Client
 
             if (_websocketClient.State == WebSocketState.Open && string.IsNullOrEmpty(websocketException))
             {
-                SendMessageFromJsonString(handshakeJson);
+                SendMessageFromJsonString(HANDSHAKE_MESSAGE_JSON);
 
-                Timer connectTimeout = new Timer(ConnectionHandshake_Timeout, null, (int)HandshakeTimeout.TotalMilliseconds, 0);
+                var connectTimeout = new Timer(ConnectionHandshake_Timeout, null, (int)HandshakeTimeout.TotalMilliseconds, 0);
                 _awaitHandsHake.WaitOne();
                 connectTimeout.Dispose();
 
@@ -302,10 +303,7 @@ namespace nanoFramework.SignalR.Client
                 }
             }
 
-            if (ReconnectEnabled && !reconnecting)
-            {
-                HardClose(true);
-            }
+            if (ReconnectEnabled && !reconnecting) HardClose(true);
             else
             {
                 State = HubConnectionState.Disconnected;
@@ -317,21 +315,18 @@ namespace nanoFramework.SignalR.Client
         private void WebSocketClient_Closed(object sender, EventArgs e)
         {
             HardClose();
-            Closed?.Invoke(this, new SignalrEventMessageArgs() { Message = "Underlying WebSocketClient closed" });
+            Closed?.Invoke(this, new SignalrEventMessageArgs { Message = "Underlying WebSocketClient closed" });
         }
+
+        private void SendHeartBeatEvent(object state) => SendMessageFromJsonString(PING_MESSAGE_JSON);
 
         private void ServerTimeoutEvent(object state)
         {
             if (State == HubConnectionState.Connected)
             {
                 HardClose();
-                Closed?.Invoke(this, new SignalrEventMessageArgs() { Message = "server timed out" });
+                Closed?.Invoke(this, new SignalrEventMessageArgs { Message = "server timed out" });
             }
-        }
-
-        private void SendHeartBeatEvent(object state)
-        {
-            SendMessageFromJsonString("{\"type\": 6}");
         }
 
         private void ConnectionHandshake_Timeout(object state)
@@ -341,20 +336,30 @@ namespace nanoFramework.SignalR.Client
             _logger.LogError("Hubconnection connect timeout");
         }
 
-        private void SendInvocationMessage(string methodName, object[] args, string invocationId = "")
+        public void SendInvocationMessage(string methodName, object[] args, string invocationId = "", string[] streamIds = null)
         {
-            var message = invocationId == null || invocationId == string.Empty ?
-                new InvocationSendMessage() :
-                new InvocationBlockingSendMessage();
+            var message = !string.IsNullOrEmpty(invocationId) || (streamIds != null && streamIds.Length > 0) ?
+                new InvocationBlockingSendMessage() :
+                new InvocationSendMessage();
             message.Target = methodName;
             message.Type = MessageType.Invocation;
             message.Arguments = args;
             message.InvocationId = invocationId;
+            message.StreamIds = streamIds;
 
-            var jsonString = message.ToString();
+            SendMessageFromJsonString(message.ToString());
+        }
 
-            // send file. 
-            SendMessageFromJsonString(jsonString);
+        public void SendStreamMessage(string methodName, object[] args, bool inv, string invocationId, string[] streamIds = null)
+        {
+            var message = new InvocationBlockingSendMessage();
+            message.Target = methodName;
+            message.Type = inv ? MessageType.StreamInvocation : MessageType.StreamItem;
+            message.Arguments = args;
+            message.InvocationId = invocationId;
+            message.StreamIds = streamIds;
+
+            SendMessageFromJsonString(message.ToString());
         }
 
         private void WebsocketClient_MessageReceived(object sender, MessageReceivedEventArgs e)
@@ -432,8 +437,7 @@ namespace nanoFramework.SignalR.Client
                         switch (invocationMessageType)
                         {
                             case MessageType.Invocation:
-                                object[] handlerStuff = _onInvokeHandlers[target] as object[];
-                                if (handlerStuff != null)
+                                if (_onInvokeHandlers[target] is object[] handlerStuff)
                                 {
                                     var handler = handlerStuff[0] as OnInvokeHandler;
                                     var types = handlerStuff[1] as Type[];
@@ -453,7 +457,7 @@ namespace nanoFramework.SignalR.Client
                                     break;
                                 }
 
-                                _logger.LogError("No matchin method found");
+                                _logger.LogError($"No matchin method found: {target}");
                                 break;
                             case MessageType.Completion:
                                 if (error != null && error != string.Empty)
@@ -475,13 +479,13 @@ namespace nanoFramework.SignalR.Client
                                 {
                                     // Because underlying Websocket gets closed this will also try to trigger a Hardclose on the Hubconnection also.
                                     // Therefor a reconnect and hardclose can happen simultaneously
-                                    Reconnecting?.Invoke(this, new SignalrEventMessageArgs() { Message = errorMessage });
+                                    Reconnecting?.Invoke(this, new SignalrEventMessageArgs { Message = errorMessage });
                                     HardClose(true);
                                 }
                                 else
                                 {
                                     HardClose();
-                                    Closed?.Invoke(this, new SignalrEventMessageArgs() { Message = errorMessage });
+                                    Closed?.Invoke(this, new SignalrEventMessageArgs { Message = errorMessage });
                                 }
 
                                 break;
@@ -513,10 +517,8 @@ namespace nanoFramework.SignalR.Client
                 messageBytes[json.Length] = 0x1E;
                 Encoding.UTF8.GetBytes(json, 0, json.Length, messageBytes, 0);
                 _websocketClient.Send(messageBytes, WebSocketMessageType.Text);
-                if (_sendHeartBeatTimer != null)
-                {
-                    _sendHeartBeatTimer.Change((int)HandshakeTimeout.TotalMilliseconds, -1);
-                }
+
+                if (_sendHeartBeatTimer != null) _sendHeartBeatTimer.Change((int)HandshakeTimeout.TotalMilliseconds, -1);
 
                 return;
             }
@@ -529,14 +531,7 @@ namespace nanoFramework.SignalR.Client
             _websocketClient.ConnectionClosed -= WebSocketClient_Closed;
             _websocketClient.MessageReceived -= WebsocketClient_MessageReceived;
 
-            if (reconnect)
-            {
-                State = HubConnectionState.Reconnecting;
-            }
-            else
-            {
-                State = HubConnectionState.Disconnected;
-            }
+            State = reconnect ? HubConnectionState.Reconnecting : HubConnectionState.Disconnected;
 
             _websocketClient?.Close();
             _serverTimeoutTimer?.Dispose();
@@ -569,7 +564,7 @@ namespace nanoFramework.SignalR.Client
                     }
                 }
                 State = HubConnectionState.Disconnected;
-                Closed?.Invoke(this, new SignalrEventMessageArgs() { Message = $"Reconnect failed with message: {errorMesage}" });
+                Closed?.Invoke(this, new SignalrEventMessageArgs { Message = $"Reconnect failed with message: {errorMesage}" });
 
             }
             else
