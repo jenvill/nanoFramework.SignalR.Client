@@ -457,7 +457,7 @@ namespace nanoFramework.SignalR.Client
                                     break;
                                 }
 
-                                _logger.LogError($"No matchin method found: {target}");
+                                _logger.LogWarning($"No matchin method found: {target}");
                                 break;
                             case MessageType.Completion:
                                 if (error != null && error != string.Empty)
