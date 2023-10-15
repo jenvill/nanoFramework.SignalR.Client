@@ -270,7 +270,7 @@ namespace nanoFramework.SignalR.Client
             };
 
             // now create the websocket client with the options
-            _websocketClient = new ClientWebSocket(clientWebSocketOptions, _logger);
+            _websocketClient = new ClientWebSocket(clientWebSocketOptions);
 
             _websocketClient.MessageReceived += WebsocketClient_MessageReceived;
             _websocketClient.ConnectionClosed += WebSocketClient_Closed;

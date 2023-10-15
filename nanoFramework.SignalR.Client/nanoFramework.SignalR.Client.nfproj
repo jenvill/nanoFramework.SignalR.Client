@@ -49,6 +49,9 @@
       <HintPath>..\packages\nanoFramework.CoreLibrary.1.14.2\lib\mscorlib.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="nanoFramework.Logging">
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.Logging.1.1.63\lib\nanoFramework.Logging.dll</HintPath>
+    </Reference>
     <Reference Include="nanoFramework.Runtime.Events, Version=1.11.6.0, Culture=neutral, PublicKeyToken=c07d481e9758c731">
       <HintPath>..\packages\nanoFramework.Runtime.Events.1.11.6\lib\nanoFramework.Runtime.Events.dll</HintPath>
       <Private>True</Private>
@@ -65,9 +68,14 @@
       <HintPath>..\packages\nanoFramework.System.IO.Streams.1.1.38\lib\System.IO.Streams.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System.Net, Version=1.10.52.0, Culture=neutral, PublicKeyToken=c07d481e9758c731">
-      <HintPath>..\packages\nanoFramework.System.Net.1.10.52\lib\System.Net.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="System.Net">
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.System.Net.1.10.62\lib\System.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http">
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.System.Net.Http.1.5.104\lib\System.Net.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.WebSockets">
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.System.Net.WebSockets.Client.1.1.68\lib\System.Net.WebSockets.dll</HintPath>
     </Reference>
     <Reference Include="System.Threading, Version=1.1.19.33722, Culture=neutral, PublicKeyToken=c07d481e9758c731">
       <HintPath>..\packages\nanoFramework.System.Threading.1.1.19\lib\System.Threading.dll</HintPath>
@@ -78,12 +86,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\CarControl.nanoFramework.Json\nanoFramework.Json\nanoFramework.Json.nfproj" />
-    <ProjectReference Include="..\..\nanoFramework.Logging\nanoFramework.Logging\nanoFramework.Logging.nfproj" />
-    <ProjectReference Include="..\..\System.Net.WebSockets\WebSockets.Client\System.Net.WebSockets.Client.nfproj" />
+    <Content Include="packages.lock.json" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="packages.lock.json" />
+    <ProjectReference Include="..\..\CarControl.nanoFramework.Json\nanoFramework.Json\nanoFramework.Json.nfproj" />
   </ItemGroup>
   <Import Project="$(NanoFrameworkProjectSystemPath)NFProjectSystem.CSharp.targets" Condition="Exists('$(NanoFrameworkProjectSystemPath)NFProjectSystem.CSharp.targets')" />
   <ProjectExtensions>
