@@ -11,6 +11,7 @@ using nanoFramework.Json;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using nanoFramework.Logging;
+using nanoFramework.Logging.Debug;
 
 namespace nanoFramework.SignalR.Client
 {
@@ -148,6 +149,7 @@ namespace nanoFramework.SignalR.Client
         {
             _hubConnectionOptions = options;
             State = HubConnectionState.Disconnected;
+            LogDispatcher.LoggerFactory ??= new DebugLoggerFactory();
             _logger = logger ?? LogDispatcher.LoggerFactory.CreateLogger(nameof(HubConnection));
             if (headers != null) CustomHeaders = headers;
 
