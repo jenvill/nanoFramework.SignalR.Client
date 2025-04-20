@@ -2,7 +2,47 @@
 
 ## [**Changes available only in 'Preview' NuGet packages:**](https://github.com/nanoframework/nanoFramework.SignalR.Client/tree/HEAD)
 
-[Full Changelog](https://github.com/nanoframework/nanoFramework.SignalR.Client/compare/v1.1.54...HEAD)
+[Full Changelog](https://github.com/nanoframework/nanoFramework.SignalR.Client/compare/v1.1.66...HEAD)
+
+**Documentation and other chores:**
+
+- Update 5 NuGet dependencies [\#98](https://github.com/nanoframework/nanoFramework.SignalR.Client/pull/98)
+
+## [v1.1.66](https://github.com/nanoframework/nanoFramework.SignalR.Client/tree/v1.1.66) (2024-04-04)
+
+[Full Changelog](https://github.com/nanoframework/nanoFramework.SignalR.Client/compare/v1.1.64...v1.1.66)
+
+**Documentation and other chores:**
+
+- Update 4 NuGet dependencies [\#97](https://github.com/nanoframework/nanoFramework.SignalR.Client/pull/97)
+
+## [v1.1.64](https://github.com/nanoframework/nanoFramework.SignalR.Client/tree/v1.1.64) (2024-02-01)
+
+[Full Changelog](https://github.com/nanoframework/nanoFramework.SignalR.Client/compare/v1.1.62...v1.1.64)
+
+**Documentation and other chores:**
+
+- Update 2 NuGet dependencies [\#96](https://github.com/nanoframework/nanoFramework.SignalR.Client/pull/96)
+
+## [v1.1.62](https://github.com/nanoframework/nanoFramework.SignalR.Client/tree/v1.1.62) (2024-01-26)
+
+[Full Changelog](https://github.com/nanoframework/nanoFramework.SignalR.Client/compare/v1.1.59...v1.1.62)
+
+**Documentation and other chores:**
+
+- Update 2 NuGet dependencies [\#95](https://github.com/nanoframework/nanoFramework.SignalR.Client/pull/95)
+
+## [v1.1.59](https://github.com/nanoframework/nanoFramework.SignalR.Client/tree/v1.1.59) (2023-11-10)
+
+[Full Changelog](https://github.com/nanoframework/nanoFramework.SignalR.Client/compare/v1.1.57...v1.1.59)
+
+**Documentation and other chores:**
+
+- Update 9 NuGet dependencies [\#94](https://github.com/nanoframework/nanoFramework.SignalR.Client/pull/94)
+
+## [v1.1.57](https://github.com/nanoframework/nanoFramework.SignalR.Client/tree/v1.1.57) (2023-05-29)
+
+[Full Changelog](https://github.com/nanoframework/nanoFramework.SignalR.Client/compare/v1.1.54...v1.1.57)
 
 **Documentation and other chores:**
 
