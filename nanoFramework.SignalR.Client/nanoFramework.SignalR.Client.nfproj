@@ -1,11 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="Current" DefaultTargets="Build"
-  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <NanoFrameworkProjectSystemPath>$(MSBuildExtensionsPath)\nanoFramework\v1.0\</NanoFrameworkProjectSystemPath>
   </PropertyGroup>
-  <Import Project="$(NanoFrameworkProjectSystemPath)NFProjectSystem.Default.props"
-    Condition="Exists('$(NanoFrameworkProjectSystemPath)NFProjectSystem.Default.props')" />
+  <Import Project="$(NanoFrameworkProjectSystemPath)NFProjectSystem.Default.props" Condition="Exists('$(NanoFrameworkProjectSystemPath)NFProjectSystem.Default.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -19,8 +17,7 @@
     <TargetFrameworkVersion>v1.0</TargetFrameworkVersion>
     <DocumentationFile>bin\$(Configuration)\nanoFramework.SignalR.Client.xml</DocumentationFile>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <RestoreLockedMode
-      Condition="'$(TF_BUILD)' == 'True' or '$(ContinuousIntegrationBuild)' == 'True'">true</RestoreLockedMode>
+    <RestoreLockedMode Condition="'$(TF_BUILD)' == 'True' or '$(ContinuousIntegrationBuild)' == 'True'">true</RestoreLockedMode>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -31,8 +28,7 @@
   <PropertyGroup>
     <DelaySign>false</DelaySign>
   </PropertyGroup>
-  <Import Project="$(NanoFrameworkProjectSystemPath)NFProjectSystem.props"
-    Condition="Exists('$(NanoFrameworkProjectSystemPath)NFProjectSystem.props')" />
+  <Import Project="$(NanoFrameworkProjectSystemPath)NFProjectSystem.props" Condition="Exists('$(NanoFrameworkProjectSystemPath)NFProjectSystem.props')" />
   <ItemGroup>
     <Compile Include="AsyncLogic.cs" />
     <Compile Include="AsyncResult.cs" />
@@ -48,56 +44,44 @@
     <Compile Include="SignalrEventMessageArgs.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.bak" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib">
-      <HintPath>
-        ..\..\..\CarControl.Nodes\packages\nanoFramework.CoreLibrary.1.17.11\lib\mscorlib.dll</HintPath>
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.CoreLibrary.1.17.11\lib\mscorlib.dll</HintPath>
     </Reference>
     <Reference Include="nanoFramework.Logging">
-      <HintPath>
-        ..\..\..\CarControl.Nodes\packages\nanoFramework.Logging.1.1.156\lib\nanoFramework.Logging.dll</HintPath>
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.Logging.1.1.156\lib\nanoFramework.Logging.dll</HintPath>
     </Reference>
     <Reference Include="nanoFramework.Runtime.Events">
-      <HintPath>
-        ..\..\..\CarControl.Nodes\packages\nanoFramework.Runtime.Events.1.11.32\lib\nanoFramework.Runtime.Events.dll</HintPath>
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.Runtime.Events.1.11.32\lib\nanoFramework.Runtime.Events.dll</HintPath>
     </Reference>
     <Reference Include="nanoFramework.System.Collections">
-      <HintPath>
-        ..\..\..\CarControl.Nodes\packages\nanoFramework.System.Collections.1.5.67\lib\nanoFramework.System.Collections.dll</HintPath>
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.System.Collections.1.5.67\lib\nanoFramework.System.Collections.dll</HintPath>
     </Reference>
     <Reference Include="nanoFramework.System.Text">
-      <HintPath>
-        ..\..\..\CarControl.Nodes\packages\nanoFramework.System.Text.1.3.42\lib\nanoFramework.System.Text.dll</HintPath>
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.System.Text.1.3.42\lib\nanoFramework.System.Text.dll</HintPath>
     </Reference>
     <Reference Include="System.IO.Streams">
-      <HintPath>
-        ..\..\..\CarControl.Nodes\packages\nanoFramework.System.IO.Streams.1.1.94\lib\System.IO.Streams.dll</HintPath>
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.System.IO.Streams.1.1.94\lib\System.IO.Streams.dll</HintPath>
     </Reference>
     <Reference Include="System.Net">
-      <HintPath>
-        ..\..\..\CarControl.Nodes\packages\nanoFramework.System.Net.1.11.42\lib\System.Net.dll</HintPath>
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.System.Net.1.11.42\lib\System.Net.dll</HintPath>
     </Reference>
     <Reference Include="System.Net.WebSockets">
-      <HintPath>
-        ..\..\..\CarControl.Nodes\packages\nanoFramework.System.Net.WebSockets.Client.1.1.147\lib\System.Net.WebSockets.dll</HintPath>
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.System.Net.WebSockets.Client.1.1.147\lib\System.Net.WebSockets.dll</HintPath>
     </Reference>
     <Reference Include="System.Threading">
-      <HintPath>
-        ..\..\..\CarControl.Nodes\packages\nanoFramework.System.Threading.1.1.52\lib\System.Threading.dll</HintPath>
+      <HintPath>..\..\..\CarControl.Nodes\packages\nanoFramework.System.Threading.1.1.52\lib\System.Threading.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\nanoFramework.Json\nanoFramework.Json\nanoFramework.Json.nfproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.lock.json" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference
-      Include="..\..\nanoFramework.Json\nanoFramework.Json\nanoFramework.Json.nfproj" />
-  </ItemGroup>
-  <Import Project="$(NanoFrameworkProjectSystemPath)NFProjectSystem.CSharp.targets"
-    Condition="Exists('$(NanoFrameworkProjectSystemPath)NFProjectSystem.CSharp.targets')" />
+  <Import Project="$(NanoFrameworkProjectSystemPath)NFProjectSystem.CSharp.targets" Condition="Exists('$(NanoFrameworkProjectSystemPath)NFProjectSystem.CSharp.targets')" />
   <ProjectExtensions>
     <ProjectCapabilities>
       <ProjectConfigurationsDeclaredAsItems />
